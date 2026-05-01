@@ -230,12 +230,12 @@
                 <div class="flex items-center gap-3 mb-8">
                     <div class="w-2 h-8 bg-amber-500 rounded-full"></div>
                     <div>
-                        <h3 class="text-xl font-bold text-white">Attendance Intent</h3>
-                        <p class="text-slate-400 text-sm">Single vs. Both Days</p>
+                        <h3 class="text-xl font-bold text-white">Mohalla Summary</h3>
+                        <p class="text-slate-400 text-sm">Total registrations per area</p>
                     </div>
                 </div>
-                <div class="h-64 flex flex-col items-center justify-center">
-                    <canvas id="intentChart"></canvas>
+                <div id="mohallaTable" class="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                    <!-- Mohalla counts injected here -->
                 </div>
             </div>
         </div>
@@ -374,19 +374,25 @@
                 options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
-            // 5. Intent
-            charts.intent = new Chart(document.getElementById('intentChart'), {
-                type: 'doughnut',
-                data: {
-                    labels: ['Single Day', 'Both Days'],
-                    datasets: [{ data: [processed.intent.single, processed.intent.both], backgroundColor: ['#fbbf24', '#f87171'], borderWidth: 0 }]
-                },
-                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
-            });
-
-            // 6. Update Count Tables
+            // 5. Update Count Tables
             updateSlotTable('satSlotTable', processed.satSlots, 'indigo');
             updateSlotTable('sunSlotTable', processed.sunSlots, 'pink');
+            updateMohallaTable(mohSorted);
+        }
+
+        function updateMohallaTable(sortedData) {
+            const container = document.getElementById('mohallaTable');
+            container.innerHTML = '';
+            
+            sortedData.forEach(([mohalla, count]) => {
+                const item = document.createElement('div');
+                item.className = `flex justify-between items-center p-3 rounded-xl bg-slate-900/40 border border-slate-700/30 hover:border-amber-500/30 transition-colors`;
+                item.innerHTML = `
+                    <span class="text-xs text-slate-300 font-medium">${mohalla}</span>
+                    <span class="text-xs font-bold text-amber-400 bg-amber-400/10 px-3 py-1 rounded-full">${count}</span>
+                `;
+                container.appendChild(item);
+            });
         }
 
         function updateSlotTable(containerId, slots, color) {
