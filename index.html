@@ -75,20 +75,16 @@
                     <h1 class="text-4xl font-bold gradient-text">Maaraz Dashboard</h1>
                     <span id="syncStatus" class="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] uppercase tracking-wider font-bold rounded-full border border-emerald-500/20">
                         <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                        Live
+                        Auto-sync active
                     </span>
                 </div>
                 <p class="text-slate-400">Real-time Registration Analytics & Statistics</p>
             </div>
             <div class="flex items-center gap-4">
-                <div class="text-right hidden sm:block">
+                <div class="text-right">
                     <p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Last Sync</p>
                     <p id="lastUpdated" class="text-sm text-slate-300 font-medium">--:--:--</p>
                 </div>
-                <button onclick="fetchData()" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-medium transition-all active:scale-95 shadow-lg shadow-blue-500/20">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                    Sync Now
-                </button>
             </div>
         </header>
 
@@ -191,48 +187,7 @@
             </div>
         </div>
 
-        <!-- Data Source Selection -->
-        <div id="dataSourceSection" class="glass-card p-6 border-blue-500/50 bg-blue-500/5 mb-8">
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
-                <!-- Google Sheets Sync -->
-                <div class="flex flex-col gap-4">
-                    <div class="flex items-start gap-4">
-                        <div class="p-3 bg-emerald-600/20 rounded-xl">
-                            <i data-lucide="cloud-lightning" class="w-6 h-6 text-emerald-400"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-emerald-400 font-bold text-lg">Google Sheets Sync</h4>
-                            <p class="text-slate-400 text-sm">Paste your "Publish to Web" CSV link here.</p>
-                        </div>
-                    </div>
-                    <div class="flex gap-2">
-                        <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-1vQLq6rH5BYR--OE-NGzyWEkSSmWlvqn3xHuiML_oXmqhvZhdkGWhGiV-nTVTnPHsEx4_fLbozgWJ1nm/pub?output=csv" 
-                            class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-emerald-500 transition-all">
-                        <button onclick="saveAndSync()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95">Sync</button>
-                    </div>
-                </div>
 
-                <!-- Manual CSV Upload -->
-                <div class="flex flex-col gap-4 border-l border-slate-800 md:pl-8">
-                    <div class="flex items-start gap-4">
-                        <div class="p-3 bg-blue-600/20 rounded-xl">
-                            <i data-lucide="file-spreadsheet" class="w-6 h-6 text-blue-400"></i>
-                        </div>
-                        <div>
-                            <h4 class="text-blue-400 font-bold text-lg">Manual CSV Upload</h4>
-                            <p class="text-slate-400 text-sm">Or upload a local file manually.</p>
-                        </div>
-                    </div>
-                    <input type="file" id="csvFileInput" accept=".csv" class="block w-full text-sm text-slate-400
-                        file:mr-4 file:py-2 file:px-4
-                        file:rounded-xl file:border-0
-                        file:text-sm file:font-semibold
-                        file:bg-blue-600 file:text-white
-                        hover:file:bg-blue-500 cursor-pointer transition-all
-                    ">
-                </div>
-            </div>
-        </div>
     </div>
 
     <script>
@@ -265,44 +220,21 @@
             }
         }
 
-        async function fetchData(customUrl = null) {
-            const savedUrl = localStorage.getItem('maarazSheetUrl');
-            const urlToFetch = customUrl || savedUrl || LOCAL_CSV;
-            
-            console.log('Loading from:', urlToFetch);
-            
-            // Handle Google Sheets differently to bypass CORS
-            if (urlToFetch.includes('google.com/spreadsheets')) {
-                loadGoogleSheet(urlToFetch);
-                return;
-            }
-
-            // Fallback for local CSV (usually works only on local server)
-            try {
-                const response = await fetch(urlToFetch);
-                if (!response.ok) throw new Error('File Not Found');
-                const csvData = await response.text();
-                processData(csvData);
-            } catch (error) {
-                console.error('Local fetch failed:', error);
-            }
+        async function fetchData() {
+            console.log('Syncing data...');
+            loadGoogleSheet(DEFAULT_SHEET_URL);
         }
 
         function loadGoogleSheet(url) {
-            console.log('Syncing with Google Sheets...');
-            
-            // Extract the base spreadsheet URL
             let base = url.split('/pub')[0].split('/edit')[0].split('/export')[0];
             
-            // Use the Google Visualization API with a callback to bypass CORS
-            // This is the most reliable way for local file:// access
             const scriptId = 'googleSheetScript';
             const oldScript = document.getElementById(scriptId);
             if (oldScript) oldScript.remove();
 
             const script = document.createElement('script');
             script.id = scriptId;
-            script.src = `${base}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse`;
+            script.src = `${base}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&t=${Date.now()}`;
             
             document.body.appendChild(script);
         }
@@ -310,11 +242,10 @@
         // Global callback for Google Sheets JSONP
         window.handleGoogleSheetResponse = function(response) {
             if (response.status === 'error') {
-                alert('Error fetching Google Sheet: ' + response.errors[0].detailed_message);
+                console.error('Error fetching Google Sheet:', response.errors[0].detailed_message);
                 return;
             }
 
-            // Convert Google's JSON format back to a CSV-like structure for processData
             const data = response.table;
             const headers = data.cols.map(col => col.label);
             const rows = data.rows.map(row => {
@@ -331,14 +262,6 @@
             console.log('Google Sheet sync complete.');
         };
 
-        document.getElementById('csvFileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => processData(event.target.result);
-            reader.readAsText(file);
-        });
-
         function processData(input) {
             let data;
             if (typeof input === 'string') {
@@ -348,7 +271,7 @@
                 });
                 data = results.data;
             } else {
-                data = input; // Already an array of objects from Google Sheets
+                data = input; 
             }
 
             const total = data.length;
@@ -577,7 +500,15 @@
         }
 
         // Initial Load
-        window.onload = fetchData;
+        window.onload = () => {
+            fetchData();
+            
+            // Set up background auto-sync every 60 seconds
+            setInterval(() => {
+                console.log('Background sync starting...');
+                fetchData();
+            }, 60000); 
+        };
     </script>
 </body>
 </html>
