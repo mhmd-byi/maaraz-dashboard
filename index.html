@@ -183,31 +183,42 @@
             </div>
         </div>
         <!-- Manual CSV Upload -->
-        <div class="glass-card p-6 border-blue-500/50 bg-blue-500/5 mb-10">
-            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+        <div class="bg-slate-800/50 border border-slate-700/50 p-6 rounded-2xl backdrop-blur-xl flex flex-col gap-6">
+            <div class="flex items-start justify-between gap-4">
                 <div class="flex items-start gap-4">
                     <div class="p-3 bg-blue-600/20 rounded-xl">
                         <i data-lucide="file-spreadsheet" class="w-6 h-6 text-blue-400"></i>
                     </div>
                     <div>
-                        <h4 class="text-blue-400 font-bold text-lg">Update Data Source</h4>
-                        <p class="text-slate-400 text-sm">Select a new CSV file to update the dashboard immediately.</p>
+                        <h4 class="text-blue-400 font-bold text-lg">Data Management</h4>
+                        <p class="text-slate-400 text-sm">Refresh from server or upload a new CSV.</p>
                     </div>
                 </div>
-                <input type="file" id="csvFileInput" accept=".csv" class="block text-sm text-slate-400
+                <button id="refreshBtn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl transition-all font-semibold text-sm">
+                    <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i>
+                    Refresh Now
+                </button>
+            </div>
+            
+            <div class="space-y-4">
+                <label class="block text-slate-300 text-sm font-medium">Update Data Source (Manual CSV)</label>
+                <input type="file" id="csvFileInput" accept=".csv" class="block w-full text-sm text-slate-400
                     file:mr-4 file:py-2 file:px-4
                     file:rounded-xl file:border-0
                     file:text-sm file:font-semibold
-                    file:bg-blue-600 file:text-white
-                    hover:file:bg-blue-500 cursor-pointer transition-all
+                    file:bg-slate-700 file:text-white
+                    hover:file:bg-slate-600 cursor-pointer transition-all
                 ">
             </div>
+            
+            <div id="dataStatus" class="text-xs text-slate-500 italic"></div>
         </div>
 
     <script>
         // Global variables for charts
         let charts = {};
         const LOCAL_CSV = 'Ashara Ohbat PMO Special Access Guided Tour (Responses) - Form responses 1.csv';
+        const STORAGE_KEY = 'maaraz_dashboard_json_data';
 
         // Initialize Lucide icons
         lucide.createIcons();
@@ -220,31 +231,86 @@
         Chart.defaults.plugins.tooltip.cornerRadius = 8;
         Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
 
-        async function fetchData() {
-            console.log('Loading local CSV...');
-            try {
-                const response = await fetch(LOCAL_CSV);
-                if (!response.ok) throw new Error('File Not Found');
-                const csvData = await response.text();
-                processData(csvData);
-                
-                // Update last sync status if needed
-                console.log('Local CSV loaded successfully');
-            } catch (error) {
-                console.error('Error loading CSV:', error);
-                // If the file isn't found, we don't alert because user can still upload manually
+        // --- JSON METHOD LOGIC ---
+        
+        // Initial setup
+        window.addEventListener('DOMContentLoaded', () => {
+            loadFromCache();
+            // Automatically try to fetch fresh data in background
+            fetchData(false);
+        });
+
+        // 1. Load from browser cache (JSON method)
+        function loadFromCache() {
+            const cachedData = localStorage.getItem(STORAGE_KEY);
+            if (cachedData) {
+                console.log('Loading from JSON cache...');
+                try {
+                    const data = JSON.parse(cachedData);
+                    renderDashboard(data);
+                    updateStatus('Loaded from local JSON cache');
+                } catch (e) {
+                    console.error('Cache corrupt:', e);
+                }
             }
         }
 
-        document.getElementById('csvFileInput').addEventListener('change', (e) => {
-            const file = e.target.files[0];
-            if (!file) return;
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                processData(event.target.result);
-            };
-            reader.readAsText(file);
-        });
+        // 2. Fetch CSV and create JSON
+        async function fetchData(showFeedback = true) {
+            const btn = document.getElementById('refreshBtn');
+            const icon = document.getElementById('refreshIcon');
+            
+            if (showFeedback) {
+                icon.classList.add('animate-spin');
+                btn.disabled = true;
+            }
+
+            console.log('Fetching CSV to create JSON...');
+            try {
+                // Add timestamp to bust cache
+                const response = await fetch(`${LOCAL_CSV}?t=${Date.now()}`);
+                if (!response.ok) throw new Error('CSV File Not Found');
+                
+                const csvString = await response.text();
+                
+                // Parse CSV to JSON using PapaParse
+                Papa.parse(csvString, {
+                    header: true,
+                    skipEmptyLines: true,
+                    complete: function(results) {
+                        const jsonData = results.data;
+                        // Save JSON to browser storage
+                        localStorage.setItem(STORAGE_KEY, JSON.stringify(jsonData));
+                        localStorage.setItem(STORAGE_KEY + '_time', new Date().toLocaleString());
+                        
+                        renderDashboard(jsonData);
+                        updateStatus('Successfully refreshed and saved as JSON');
+                        
+                        if (showFeedback) {
+                            icon.classList.remove('animate-spin');
+                            btn.disabled = false;
+                        }
+                    }
+                });
+
+            } catch (error) {
+                console.error('Error fetching CSV:', error);
+                if (showFeedback) {
+                    alert('Could not find the CSV file to refresh. Please ensure the file is named correctly.');
+                    icon.classList.remove('animate-spin');
+                    btn.disabled = false;
+                }
+            }
+        }
+
+        function updateStatus(msg) {
+            const time = localStorage.getItem(STORAGE_KEY + '_time') || 'Never';
+            document.getElementById('dataStatus').innerHTML = `${msg}<br>Last Sync: ${time}`;
+        }
+
+        function renderDashboard(data) {
+            processData(data);
+        }
 
         function processData(input) {
             let data;
@@ -254,6 +320,9 @@
                     skipEmptyLines: true
                 });
                 data = results.data;
+                // Save this upload to cache too
+                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+                localStorage.setItem(STORAGE_KEY + '_time', new Date().toLocaleString());
             } else {
                 data = input; 
             }
@@ -278,6 +347,8 @@
                 const satSlot = row['Time for Saturday - 2nd May / 16mi Zilqadatil Haram'];
                 const sunSlot = row['Time for Sunday - 3rd May / 17mi Zilqadatil Haram'];
                 const timestamp = row['Timestamp'];
+
+                if (!its || its === 'Unknown') return;
 
                 // Unique ITS count
                 itsMap.set(its, (itsMap.get(its) || 0) + 1);
@@ -418,11 +489,10 @@
                 }
             });
 
-            // 4. Mohalla Breakdown (All Mohallas)
+            // 4. Mohalla Breakdown
             const mohallaSorted = Object.entries(processed.mohalla)
                 .sort((a, b) => b[1] - a[1]);
             
-            // Adjust container height dynamically based on number of mohallas
             const mohallaCount = mohallaSorted.length;
             const dynamicHeight = Math.max(320, mohallaCount * 30);
             document.getElementById('mohallaChartContainer').style.height = `${dynamicHeight}px`;
@@ -483,8 +553,19 @@
             });
         }
 
-        // Initial Load
-        window.onload = fetchData;
+        // Event Listeners
+        document.getElementById('refreshBtn').addEventListener('click', () => fetchData(true));
+
+        document.getElementById('csvFileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                processData(event.target.result);
+                updateStatus('Manually updated from CSV and cached as JSON');
+            };
+            reader.readAsText(file);
+        });
     </script>
 </body>
 </html>
