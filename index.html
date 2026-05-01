@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maaraz Registration Dashboard</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- PapaParse for CSV parsing -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.3.2/papaparse.min.js"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        body {
+            font-family: 'Outfit', sans-serif;
+            background-color: #0f172a;
+            color: #f8fafc;
+        }
+        .glass-card {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1.5rem;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .glass-card:hover {
+            transform: translateY(-4px);
+            border-color: rgba(255, 255, 255, 0.2);
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .gradient-text {
+            background: linear-gradient(135deg, #38bdf8 0%, #818cf8 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        .gradient-border {
+            border: 2px solid transparent;
+            background: linear-gradient(#0f172a, #0f172a) padding-box,
+                        linear-gradient(135deg, #38bdf8, #818cf8) border-box;
+        }
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        .loading-shimmer {
+            background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+            background-size: 200% 100%;
+            animation: shimmer 1.5s infinite;
+        }
+        @keyframes shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8">
+    <div class="max-w-7xl mx-auto">
+        <!-- Header -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+            <div>
+                <div class="flex items-center gap-3 mb-1">
+                    <h1 class="text-4xl font-bold gradient-text">Maaraz Dashboard</h1>
+                    <span id="syncStatus" class="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] uppercase tracking-wider font-bold rounded-full border border-emerald-500/20">
+                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
+                        Live
+                    </span>
+                </div>
+                <p class="text-slate-400">Real-time Registration Analytics & Statistics</p>
+            </div>
+            <div class="flex items-center gap-4">
+                <div class="text-right hidden sm:block">
+                    <p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Last Sync</p>
+                    <p id="lastUpdated" class="text-sm text-slate-300 font-medium">--:--:--</p>
+                </div>
+                <button onclick="fetchData()" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-medium transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Sync Now
+                </button>
+            </div>
+        </header>
+
+        <!-- KPI Grid -->
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div class="glass-card p-6 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-10">
+                    <i data-lucide="users" class="w-24 h-24 text-blue-400"></i>
+                </div>
+                <p class="text-slate-400 text-sm font-medium">Total Registrations</p>
+                <h2 id="totalRegs" class="text-4xl font-bold mt-2">0</h2>
+                <div class="flex items-center gap-2 mt-2 text-xs">
+                    <span id="duplicateCount" class="text-amber-400 font-semibold">0</span>
+                    <span class="text-slate-500">potential duplicates</span>
+                </div>
+            </div>
+            <div class="glass-card p-6 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-10">
+                    <i data-lucide="user-check" class="w-24 h-24 text-emerald-400"></i>
+                </div>
+                <p class="text-slate-400 text-sm font-medium">Unique People (ITS)</p>
+                <h2 id="uniquePeople" class="text-4xl font-bold mt-2">0</h2>
+                <div id="uniquePercent" class="text-emerald-400 text-xs mt-2 font-medium">100% of total</div>
+            </div>
+            <div class="glass-card p-6 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-10">
+                    <i data-lucide="calendar" class="w-24 h-24 text-purple-400"></i>
+                </div>
+                <p class="text-slate-400 text-sm font-medium">Saturday Regs</p>
+                <h2 id="satRegs" class="text-4xl font-bold mt-2">0</h2>
+                <div id="satPercent" class="text-purple-400 text-xs mt-2 font-medium">0% share</div>
+            </div>
+            <div class="glass-card p-6 relative overflow-hidden">
+                <div class="absolute -right-4 -top-4 opacity-10">
+                    <i data-lucide="calendar-days" class="w-24 h-24 text-pink-400"></i>
+                </div>
+                <p class="text-slate-400 text-sm font-medium">Sunday Regs</p>
+                <h2 id="sunRegs" class="text-4xl font-bold mt-2">0</h2>
+                <div id="sunPercent" class="text-pink-400 text-xs mt-2 font-medium">0% share</div>
+            </div>
+        </div>
+
+        <!-- Main Charts Grid -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Timeline Chart -->
+            <div class="glass-card p-6 lg:col-span-2">
+                <div class="flex items-center justify-between mb-6">
+                    <h3 class="text-xl font-bold flex items-center gap-2">
+                        <i data-lucide="trending-up" class="w-5 h-5 text-blue-400"></i>
+                        Registration Timeline
+                    </h3>
+                </div>
+                <div class="h-80">
+                    <canvas id="timelineChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Saturday Slots -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i data-lucide="clock" class="w-5 h-5 text-purple-400"></i>
+                    Saturday Time Slots
+                </h3>
+                <div class="h-80">
+                    <canvas id="satSlotChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Sunday Slots -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i data-lucide="clock" class="w-5 h-5 text-pink-400"></i>
+                    Sunday Time Slots
+                </h3>
+                <div class="h-80">
+                    <canvas id="sunSlotChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Mohalla Breakdown -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i data-lucide="map-pin" class="w-5 h-5 text-emerald-400"></i>
+                    Mohalla Distribution (All)
+                </h3>
+                <div id="mohallaChartContainer" class="h-80 overflow-y-auto pr-2">
+                    <canvas id="mohallaChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Multi-day Registration -->
+            <div class="glass-card p-6">
+                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
+                    <i data-lucide="layers" class="w-5 h-5 text-amber-400"></i>
+                    Attendance Intent
+                </h3>
+                <div class="h-80 flex flex-col items-center justify-center">
+                    <canvas id="intentChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+        <!-- Data Source Selection -->
+        <div id="dataSourceSection" class="glass-card p-6 border-blue-500/50 bg-blue-500/5 mb-8">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Google Sheets Sync -->
+                <div class="flex flex-col gap-4">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-emerald-600/20 rounded-xl">
+                            <i data-lucide="cloud-lightning" class="w-6 h-6 text-emerald-400"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-emerald-400 font-bold text-lg">Google Sheets Sync</h4>
+                            <p class="text-slate-400 text-sm">Paste your "Publish to Web" CSV link here.</p>
+                        </div>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="text" id="sheetUrlInput" placeholder="https://docs.google.com/spreadsheets/d/e/2PACX-1vQLq6rH5BYR--OE-NGzyWEkSSmWlvqn3xHuiML_oXmqhvZhdkGWhGiV-nTVTnPHsEx4_fLbozgWJ1nm/pub?output=csv" 
+                            class="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2 text-sm text-slate-300 focus:outline-none focus:border-emerald-500 transition-all">
+                        <button onclick="saveAndSync()" class="bg-emerald-600 hover:bg-emerald-500 px-4 py-2 rounded-xl text-sm font-bold transition-all active:scale-95">Sync</button>
+                    </div>
+                </div>
+
+                <!-- Manual CSV Upload -->
+                <div class="flex flex-col gap-4 border-l border-slate-800 md:pl-8">
+                    <div class="flex items-start gap-4">
+                        <div class="p-3 bg-blue-600/20 rounded-xl">
+                            <i data-lucide="file-spreadsheet" class="w-6 h-6 text-blue-400"></i>
+                        </div>
+                        <div>
+                            <h4 class="text-blue-400 font-bold text-lg">Manual CSV Upload</h4>
+                            <p class="text-slate-400 text-sm">Or upload a local file manually.</p>
+                        </div>
+                    </div>
+                    <input type="file" id="csvFileInput" accept=".csv" class="block w-full text-sm text-slate-400
+                        file:mr-4 file:py-2 file:px-4
+                        file:rounded-xl file:border-0
+                        file:text-sm file:font-semibold
+                        file:bg-blue-600 file:text-white
+                        hover:file:bg-blue-500 cursor-pointer transition-all
+                    ">
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Global variables for charts
+        let charts = {};
+        const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQLq6rH5BYR--OE-NGzyWEkSSmWlvqn3xHuiML_oXmqhvZhdkGWhGiV-nTVTnPHsEx4_fLbozgWJ1nm/pub?output=csv';
+        const LOCAL_CSV = 'Ashara Ohbat PMO Special Access Guided Tour (Responses) - Form responses 1.csv';
+
+        // Initialize Lucide icons
+        lucide.createIcons();
+
+        // Load saved URL from localStorage or use the default one from the code
+        const savedUrl = localStorage.getItem('maarazSheetUrl');
+        document.getElementById('sheetUrlInput').value = savedUrl || DEFAULT_SHEET_URL;
+        if (!savedUrl) localStorage.setItem('maarazSheetUrl', DEFAULT_SHEET_URL);
+
+        // Chart.js Default Config
+        Chart.defaults.color = '#94a3b8';
+        Chart.defaults.font.family = "'Outfit', sans-serif";
+        Chart.defaults.plugins.tooltip.backgroundColor = '#1e293b';
+        Chart.defaults.plugins.tooltip.padding = 12;
+        Chart.defaults.plugins.tooltip.cornerRadius = 8;
+        Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
+
+        function saveAndSync() {
+            const url = document.getElementById('sheetUrlInput').value.trim();
+            if (url) {
+                localStorage.setItem('maarazSheetUrl', url);
+                fetchData(url);
+            }
+        }
+
+        async function fetchData(customUrl = null) {
+            const savedUrl = localStorage.getItem('maarazSheetUrl');
+            const urlToFetch = customUrl || savedUrl || LOCAL_CSV;
+            
+            console.log('Loading from:', urlToFetch);
+            
+            // Handle Google Sheets differently to bypass CORS
+            if (urlToFetch.includes('google.com/spreadsheets')) {
+                loadGoogleSheet(urlToFetch);
+                return;
+            }
+
+            // Fallback for local CSV (usually works only on local server)
+            try {
+                const response = await fetch(urlToFetch);
+                if (!response.ok) throw new Error('File Not Found');
+                const csvData = await response.text();
+                processData(csvData);
+            } catch (error) {
+                console.error('Local fetch failed:', error);
+            }
+        }
+
+        function loadGoogleSheet(url) {
+            console.log('Syncing with Google Sheets...');
+            
+            // Extract the base spreadsheet URL
+            let base = url.split('/pub')[0].split('/edit')[0].split('/export')[0];
+            
+            // Use the Google Visualization API with a callback to bypass CORS
+            // This is the most reliable way for local file:// access
+            const scriptId = 'googleSheetScript';
+            const oldScript = document.getElementById(scriptId);
+            if (oldScript) oldScript.remove();
+
+            const script = document.createElement('script');
+            script.id = scriptId;
+            script.src = `${base}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse`;
+            
+            document.body.appendChild(script);
+        }
+
+        // Global callback for Google Sheets JSONP
+        window.handleGoogleSheetResponse = function(response) {
+            if (response.status === 'error') {
+                alert('Error fetching Google Sheet: ' + response.errors[0].detailed_message);
+                return;
+            }
+
+            // Convert Google's JSON format back to a CSV-like structure for processData
+            const data = response.table;
+            const headers = data.cols.map(col => col.label);
+            const rows = data.rows.map(row => {
+                let obj = {};
+                row.c.forEach((cell, i) => {
+                    if (headers[i]) {
+                        obj[headers[i]] = cell ? (cell.v !== null ? cell.v : '') : '';
+                    }
+                });
+                return obj;
+            });
+
+            processData(rows);
+            console.log('Google Sheet sync complete.');
+        };
+
+        document.getElementById('csvFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => processData(event.target.result);
+            reader.readAsText(file);
+        });
+
+        function processData(input) {
+            let data;
+            if (typeof input === 'string') {
+                const results = Papa.parse(input, {
+                    header: true,
+                    skipEmptyLines: true
+                });
+                data = results.data;
+            } else {
+                data = input; // Already an array of objects from Google Sheets
+            }
+
+            const total = data.length;
+            
+            // Statistics logic
+            const itsMap = new Map();
+            const mohallaCount = {};
+            const satSlots = {};
+            const sunSlots = {};
+            const timelineData = {};
+            
+            let satTotal = 0;
+            let sunTotal = 0;
+            let bothDaysCount = 0;
+            let oneDayOnlyCount = 0;
+
+            data.forEach(row => {
+                const its = row['ITS'] ? row['ITS'].trim() : 'Unknown';
+                const mohalla = row['Mohalla'] ? row['Mohalla'].trim() : 'Unknown';
+                const satSlot = row['Time for Saturday - 2nd May / 16mi Zilqadatil Haram'];
+                const sunSlot = row['Time for Sunday - 3rd May / 17mi Zilqadatil Haram'];
+                const timestamp = row['Timestamp'];
+
+                // Unique ITS count
+                itsMap.set(its, (itsMap.get(its) || 0) + 1);
+
+                // Mohalla count
+                mohallaCount[mohalla] = (mohallaCount[mohalla] || 0) + 1;
+
+                // Slot counts
+                let hasSat = false;
+                let hasSun = false;
+                
+                if (satSlot && satSlot.trim()) {
+                    satSlots[satSlot] = (satSlots[satSlot] || 0) + 1;
+                    satTotal++;
+                    hasSat = true;
+                }
+                if (sunSlot && sunSlot.trim()) {
+                    sunSlots[sunSlot] = (sunSlots[sunSlot] || 0) + 1;
+                    sunTotal++;
+                    hasSun = true;
+                }
+
+                if (hasSat && hasSun) bothDaysCount++;
+                else if (hasSat || hasSun) oneDayOnlyCount++;
+
+                // Timeline parsing (DD/MM/YYYY HH:MM:SS)
+                if (timestamp) {
+                    const datePart = timestamp.split(' ')[0];
+                    timelineData[datePart] = (timelineData[datePart] || 0) + 1;
+                }
+            });
+
+            const uniqueCount = itsMap.size;
+            const duplicateCount = total - uniqueCount;
+
+            // Update KPIs
+            document.getElementById('totalRegs').innerText = total;
+            document.getElementById('uniquePeople').innerText = uniqueCount;
+            document.getElementById('duplicateCount').innerText = duplicateCount;
+            document.getElementById('satRegs').innerText = satTotal;
+            document.getElementById('sunRegs').innerText = sunTotal;
+            document.getElementById('uniquePercent').innerText = `${((uniqueCount/total)*100).toFixed(1)}% of total`;
+            document.getElementById('satPercent').innerText = `${((satTotal/(satTotal+sunTotal))*100).toFixed(1)}% share`;
+            document.getElementById('sunPercent').innerText = `${((sunTotal/(satTotal+sunTotal))*100).toFixed(1)}% share`;
+            document.getElementById('lastUpdated').innerText = `Last updated: ${new Date().toLocaleTimeString()}`;
+
+            updateCharts({
+                mohalla: mohallaCount,
+                satSlots: satSlots,
+                sunSlots: sunSlots,
+                timeline: timelineData,
+                intent: { both: bothDaysCount, single: oneDayOnlyCount }
+            });
+        }
+
+        function updateCharts(processed) {
+            // Destroy existing charts if they exist
+            Object.values(charts).forEach(chart => chart.destroy());
+
+            // 1. Timeline Chart
+            const timelineLabels = Object.keys(processed.timeline).sort((a, b) => {
+                const partsA = a.split('/');
+                const partsB = b.split('/');
+                return new Date(partsA[2], partsA[1]-1, partsA[0]) - new Date(partsB[2], partsB[1]-1, partsB[0]);
+            });
+            charts.timeline = new Chart(document.getElementById('timelineChart'), {
+                type: 'line',
+                data: {
+                    labels: timelineLabels,
+                    datasets: [{
+                        label: 'Registrations',
+                        data: timelineLabels.map(l => processed.timeline[l]),
+                        borderColor: '#38bdf8',
+                        backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                        fill: true,
+                        tension: 0.4,
+                        borderWidth: 3,
+                        pointBackgroundColor: '#38bdf8',
+                        pointRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // 2. Saturday Slots
+            const satLabels = Object.keys(processed.satSlots).sort();
+            charts.sat = new Chart(document.getElementById('satSlotChart'), {
+                type: 'bar',
+                data: {
+                    labels: satLabels,
+                    datasets: [{
+                        label: 'Attendees',
+                        data: satLabels.map(l => processed.satSlots[l]),
+                        backgroundColor: '#818cf8',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // 3. Sunday Slots
+            const sunLabels = Object.keys(processed.sunSlots).sort();
+            charts.sun = new Chart(document.getElementById('sunSlotChart'), {
+                type: 'bar',
+                data: {
+                    labels: sunLabels,
+                    datasets: [{
+                        label: 'Attendees',
+                        data: sunLabels.map(l => processed.sunSlots[l]),
+                        backgroundColor: '#f472b6',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { legend: { display: false } },
+                    scales: {
+                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // 4. Mohalla Breakdown (All Mohallas)
+            const mohallaSorted = Object.entries(processed.mohalla)
+                .sort((a, b) => b[1] - a[1]);
+            
+            // Adjust container height dynamically based on number of mohallas
+            const mohallaCount = mohallaSorted.length;
+            const dynamicHeight = Math.max(320, mohallaCount * 30);
+            document.getElementById('mohallaChartContainer').style.height = `${dynamicHeight}px`;
+
+            charts.mohalla = new Chart(document.getElementById('mohallaChart'), {
+                type: 'bar',
+                data: {
+                    labels: mohallaSorted.map(i => i[0]),
+                    datasets: [{
+                        label: 'Registrations',
+                        data: mohallaSorted.map(i => i[1]),
+                        backgroundColor: '#34d399',
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: { 
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (context) => ` ${context.parsed.x} registrations`
+                            }
+                        }
+                    },
+                    scales: {
+                        y: { 
+                            grid: { display: false },
+                            ticks: { font: { size: 11 } }
+                        },
+                        x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }
+                    }
+                }
+            });
+
+            // 5. Intent Pie
+            charts.intent = new Chart(document.getElementById('intentChart'), {
+                type: 'doughnut',
+                data: {
+                    labels: ['Single Day', 'Both Days'],
+                    datasets: [{
+                        data: [processed.intent.single, processed.intent.both],
+                        backgroundColor: ['#fbbf24', '#f87171'],
+                        borderWidth: 0,
+                        hoverOffset: 10
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'bottom', labels: { padding: 20 } }
+                    }
+                }
+            });
+        }
+
+        // Initial Load
+        window.onload = fetchData;
+    </script>
+</body>
+</html>
