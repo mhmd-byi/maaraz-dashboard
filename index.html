@@ -69,501 +69,351 @@
 <body class="min-h-screen p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
         <!-- Header -->
-        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-4">
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-center mb-10 gap-6">
             <div>
-                <div class="flex items-center gap-3 mb-1">
-                    <h1 class="text-4xl font-bold gradient-text">Maaraz Dashboard</h1>
-                </div>
-                <p class="text-slate-400">Registration Analytics & Statistics</p>
+                <h1 class="text-4xl font-extrabold text-white tracking-tight mb-2">
+                    Maaraz <span class="text-blue-500 underline decoration-blue-500/30">Registration</span>
+                </h1>
+                <p class="text-slate-400 text-lg flex items-center gap-2">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5"></i>
+                    Analytics Dashboard
+                </p>
             </div>
-            <div class="flex items-center gap-4">
-                <button onclick="fetchData()" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-medium transition-all active:scale-95 shadow-lg shadow-blue-500/20">
-                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
-                    Refresh Data
-                </button>
+            
+            <!-- Simple Upload -->
+            <div class="w-full md:w-auto bg-slate-800/50 border border-slate-700/50 p-4 rounded-2xl backdrop-blur-xl">
+                <div class="flex items-center gap-4">
+                    <div class="p-2 bg-blue-600/20 rounded-lg">
+                        <i data-lucide="file-up" class="w-5 h-5 text-blue-400"></i>
+                    </div>
+                    <div>
+                        <p class="text-xs text-slate-400 font-medium uppercase tracking-wider mb-1">Upload Data Source</p>
+                        <input type="file" id="csvFileInput" accept=".csv" class="block text-xs text-slate-300
+                            file:mr-3 file:py-1 file:px-3
+                            file:rounded-lg file:border-0
+                            file:text-xs file:font-semibold
+                            file:bg-blue-600 file:text-white
+                            hover:file:bg-blue-500 cursor-pointer transition-all
+                        ">
+                    </div>
+                </div>
             </div>
         </header>
 
         <!-- KPI Grid -->
-        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
-            <div class="glass-card p-6 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 opacity-10">
-                    <i data-lucide="users" class="w-24 h-24 text-blue-400"></i>
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-10">
+            <div class="glass-card p-6">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-blue-600/20 rounded-xl">
+                        <i data-lucide="users" class="w-6 h-6 text-blue-400"></i>
+                    </div>
+                    <span class="text-xs font-bold text-blue-400 bg-blue-400/10 px-2 py-1 rounded-full uppercase">Total</span>
                 </div>
-                <p class="text-slate-400 text-sm font-medium">Total Registrations</p>
-                <h2 id="totalRegs" class="text-4xl font-bold mt-2">0</h2>
-                <div class="flex items-center gap-2 mt-2 text-xs">
-                    <span id="duplicateCount" class="text-amber-400 font-semibold">0</span>
-                    <span class="text-slate-500">potential duplicates</span>
+                <h3 class="text-slate-400 text-sm font-medium mb-1">Total Registrations</h3>
+                <div class="flex items-baseline gap-2">
+                    <span id="totalRegs" class="text-3xl font-bold text-white">0</span>
+                    <span class="text-xs text-slate-500">entries</span>
                 </div>
             </div>
-            <div class="glass-card p-6 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 opacity-10">
-                    <i data-lucide="user-check" class="w-24 h-24 text-emerald-400"></i>
+
+            <div class="glass-card p-6 border-pink-500/30">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-pink-600/20 rounded-xl">
+                        <i data-lucide="user-check" class="w-6 h-6 text-pink-400"></i>
+                    </div>
+                    <span class="text-xs font-bold text-pink-400 bg-pink-400/10 px-2 py-1 rounded-full uppercase">Unique</span>
                 </div>
-                <p class="text-slate-400 text-sm font-medium">Unique People (ITS)</p>
-                <h2 id="uniquePeople" class="text-4xl font-bold mt-2">0</h2>
-                <div id="uniquePercent" class="text-emerald-400 text-xs mt-2 font-medium">100% of total</div>
+                <h3 class="text-slate-400 text-sm font-medium mb-1">Unique ITS Count</h3>
+                <div class="flex items-baseline gap-2">
+                    <span id="uniquePeople" class="text-3xl font-bold text-white">0</span>
+                    <span id="uniquePercent" class="text-xs text-slate-500">0%</span>
+                </div>
             </div>
-            <div class="glass-card p-6 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 opacity-10">
-                    <i data-lucide="calendar" class="w-24 h-24 text-purple-400"></i>
+
+            <div class="glass-card p-6 border-amber-500/30">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-amber-600/20 rounded-xl">
+                        <i data-lucide="copy" class="w-6 h-6 text-amber-400"></i>
+                    </div>
+                    <span class="text-xs font-bold text-amber-400 bg-amber-400/10 px-2 py-1 rounded-full uppercase">Duplicates</span>
                 </div>
-                <p class="text-slate-400 text-sm font-medium">Saturday Regs</p>
-                <h2 id="satRegs" class="text-4xl font-bold mt-2">0</h2>
-                <div id="satPercent" class="text-purple-400 text-xs mt-2 font-medium">0% share</div>
+                <h3 class="text-slate-400 text-sm font-medium mb-1">Duplicate Registrations</h3>
+                <div class="flex items-baseline gap-2">
+                    <span id="duplicateCount" class="text-3xl font-bold text-white">0</span>
+                    <span class="text-xs text-slate-500">re-entries</span>
+                </div>
             </div>
-            <div class="glass-card p-6 relative overflow-hidden">
-                <div class="absolute -right-4 -top-4 opacity-10">
-                    <i data-lucide="calendar-days" class="w-24 h-24 text-pink-400"></i>
+
+            <div class="glass-card p-6 border-emerald-500/30">
+                <div class="flex justify-between items-start mb-4">
+                    <div class="p-3 bg-emerald-600/20 rounded-xl">
+                        <i data-lucide="clock" class="w-6 h-6 text-emerald-400"></i>
+                    </div>
+                    <span id="lastUpdated" class="text-[10px] text-emerald-400 font-bold bg-emerald-400/10 px-2 py-1 rounded-full uppercase">Waiting...</span>
                 </div>
-                <p class="text-slate-400 text-sm font-medium">Sunday Regs</p>
-                <h2 id="sunRegs" class="text-4xl font-bold mt-2">0</h2>
-                <div id="sunPercent" class="text-pink-400 text-xs mt-2 font-medium">0% share</div>
+                <h3 class="text-slate-400 text-sm font-medium mb-1">Saturation Status</h3>
+                <div class="flex gap-4">
+                    <div>
+                        <p class="text-[10px] text-slate-500 uppercase font-bold">Sat</p>
+                        <span id="satRegs" class="text-xl font-bold text-white">0</span>
+                    </div>
+                    <div class="border-r border-slate-700 h-8 self-center"></div>
+                    <div>
+                        <p class="text-[10px] text-slate-500 uppercase font-bold">Sun</p>
+                        <span id="sunRegs" class="text-xl font-bold text-white">0</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <!-- Main Charts Grid -->
+        <!-- Charts Grid -->
         <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-            <!-- Timeline Chart -->
-            <div class="glass-card p-6 lg:col-span-2">
-                <div class="flex items-center justify-between mb-6">
-                    <h3 class="text-xl font-bold flex items-center gap-2">
-                        <i data-lucide="trending-up" class="w-5 h-5 text-blue-400"></i>
-                        Registration Timeline
-                    </h3>
+            <div class="glass-card p-8 lg:col-span-2">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-2 h-8 bg-blue-500 rounded-full"></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Registration Timeline</h3>
+                        <p class="text-slate-400 text-sm">Volume over time</p>
+                    </div>
                 </div>
                 <div class="h-80">
                     <canvas id="timelineChart"></canvas>
                 </div>
             </div>
 
-            <!-- Saturday Slots -->
-            <div class="glass-card p-6">
-                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-                    <i data-lucide="clock" class="w-5 h-5 text-purple-400"></i>
-                    Saturday Time Slots
-                </h3>
-                <div class="h-80">
+            <div class="glass-card p-8">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-2 h-8 bg-indigo-500 rounded-full"></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Saturday Slots</h3>
+                        <p class="text-slate-400 text-sm">Time slots for 2nd May</p>
+                    </div>
+                </div>
+                <div class="h-64 mb-6">
                     <canvas id="satSlotChart"></canvas>
                 </div>
-            </div>
-
-            <!-- Sunday Slots -->
-            <div class="glass-card p-6">
-                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-                    <i data-lucide="clock" class="w-5 h-5 text-pink-400"></i>
-                    Sunday Time Slots
-                </h3>
-                <div class="h-80">
-                    <canvas id="sunSlotChart"></canvas>
+                <div id="satSlotTable" class="grid grid-cols-2 gap-2">
+                    <!-- Saturday counts injected here -->
                 </div>
             </div>
 
-            <!-- Mohalla Breakdown -->
-            <div class="glass-card p-6">
-                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-                    <i data-lucide="map-pin" class="w-5 h-5 text-emerald-400"></i>
-                    Mohalla Distribution (All)
-                </h3>
-                <div id="mohallaChartContainer" class="h-80 overflow-y-auto pr-2">
+            <div class="glass-card p-8">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-2 h-8 bg-pink-500 rounded-full"></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Sunday Slots</h3>
+                        <p class="text-slate-400 text-sm">Time slots for 3rd May</p>
+                    </div>
+                </div>
+                <div class="h-64 mb-6">
+                    <canvas id="sunSlotChart"></canvas>
+                </div>
+                <div id="sunSlotTable" class="grid grid-cols-2 gap-2">
+                    <!-- Sunday counts injected here -->
+                </div>
+            </div>
+
+            <div class="glass-card p-8 lg:row-span-2">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-2 h-8 bg-emerald-500 rounded-full"></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Mohalla Distribution</h3>
+                        <p class="text-slate-400 text-sm">Breakdown by area</p>
+                    </div>
+                </div>
+                <div id="mohallaChartContainer" class="overflow-y-auto pr-4 scrollbar-thin">
                     <canvas id="mohallaChart"></canvas>
                 </div>
             </div>
 
-            <!-- Multi-day Registration -->
-            <div class="glass-card p-6">
-                <h3 class="text-xl font-bold mb-6 flex items-center gap-2">
-                    <i data-lucide="layers" class="w-5 h-5 text-amber-400"></i>
-                    Attendance Intent
-                </h3>
-                <div class="h-80 flex flex-col items-center justify-center">
+            <div class="glass-card p-8">
+                <div class="flex items-center gap-3 mb-8">
+                    <div class="w-2 h-8 bg-amber-500 rounded-full"></div>
+                    <div>
+                        <h3 class="text-xl font-bold text-white">Attendance Intent</h3>
+                        <p class="text-slate-400 text-sm">Single vs. Both Days</p>
+                    </div>
+                </div>
+                <div class="h-64 flex flex-col items-center justify-center">
                     <canvas id="intentChart"></canvas>
                 </div>
             </div>
         </div>
-        <!-- Manual CSV Upload -->
-        <div class="bg-slate-800/50 border border-slate-700/50 p-6 rounded-2xl backdrop-blur-xl flex flex-col gap-6">
-            <div class="flex items-start justify-between gap-4">
-                <div class="flex items-start gap-4">
-                    <div class="p-3 bg-blue-600/20 rounded-xl">
-                        <i data-lucide="file-spreadsheet" class="w-6 h-6 text-blue-400"></i>
-                    </div>
-                    <div>
-                        <h4 class="text-blue-400 font-bold text-lg">Data Management</h4>
-                        <p class="text-slate-400 text-sm">Refresh from server or upload a new CSV.</p>
-                    </div>
-                </div>
-                <button id="refreshBtn" class="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-xl transition-all font-semibold text-sm">
-                    <i data-lucide="refresh-cw" class="w-4 h-4" id="refreshIcon"></i>
-                    Refresh Now
-                </button>
-            </div>
-            
-            <div class="space-y-4">
-                <label class="block text-slate-300 text-sm font-medium">Update Data Source (Manual CSV)</label>
-                <input type="file" id="csvFileInput" accept=".csv" class="block w-full text-sm text-slate-400
-                    file:mr-4 file:py-2 file:px-4
-                    file:rounded-xl file:border-0
-                    file:text-sm file:font-semibold
-                    file:bg-slate-700 file:text-white
-                    hover:file:bg-slate-600 cursor-pointer transition-all
-                ">
-            </div>
-            
-            <div id="dataStatus" class="text-xs text-slate-500 italic"></div>
-        </div>
+    </div>
 
     <script>
-        // Global variables for charts
         let charts = {};
-        const LOCAL_CSV = 'Ashara Ohbat PMO Special Access Guided Tour (Responses) - Form responses 1.csv';
-        const STORAGE_KEY = 'maaraz_dashboard_json_data';
-
-        // Initialize Lucide icons
         lucide.createIcons();
 
-        // Chart.js Default Config
         Chart.defaults.color = '#94a3b8';
         Chart.defaults.font.family = "'Outfit', sans-serif";
         Chart.defaults.plugins.tooltip.backgroundColor = '#1e293b';
-        Chart.defaults.plugins.tooltip.padding = 12;
-        Chart.defaults.plugins.tooltip.cornerRadius = 8;
-        Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
 
-        // --- JSON METHOD LOGIC ---
-        
-        // Initial setup
-        window.addEventListener('DOMContentLoaded', () => {
-            loadFromCache();
-            // Automatically try to fetch fresh data in background
-            fetchData(false);
-        });
+        function processData(csvData) {
+            Papa.parse(csvData, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    const data = results.data;
+                    const total = data.length;
+                    
+                    const itsMap = new Map();
+                    const mohallaCount = {};
+                    const satSlots = {};
+                    const sunSlots = {};
+                    const timelineData = {};
+                    
+                    let satTotal = 0;
+                    let sunTotal = 0;
+                    let bothDaysCount = 0;
+                    let oneDayOnlyCount = 0;
 
-        // 1. Load from browser cache (JSON method)
-        function loadFromCache() {
-            const cachedData = localStorage.getItem(STORAGE_KEY);
-            if (cachedData) {
-                console.log('Loading from JSON cache...');
-                try {
-                    const data = JSON.parse(cachedData);
-                    renderDashboard(data);
-                    updateStatus('Loaded from local JSON cache');
-                } catch (e) {
-                    console.error('Cache corrupt:', e);
-                }
-            }
-        }
+                    data.forEach(row => {
+                        const its = row['ITS'] ? row['ITS'].trim() : null;
+                        if(!its) return;
 
-        // 2. Fetch CSV and create JSON
-        async function fetchData(showFeedback = true) {
-            const btn = document.getElementById('refreshBtn');
-            const icon = document.getElementById('refreshIcon');
-            
-            if (showFeedback) {
-                icon.classList.add('animate-spin');
-                btn.disabled = true;
-            }
+                        const mohalla = row['Mohalla'] ? row['Mohalla'].trim() : 'Unknown';
+                        const satSlot = row['Time for Saturday - 2nd May / 16mi Zilqadatil Haram'];
+                        const sunSlot = row['Time for Sunday - 3rd May / 17mi Zilqadatil Haram'];
+                        const timestamp = row['Timestamp'];
 
-            console.log('Fetching CSV to create JSON...');
-            try {
-                // Add timestamp to bust cache
-                const response = await fetch(`${LOCAL_CSV}?t=${Date.now()}`);
-                if (!response.ok) throw new Error('CSV File Not Found');
-                
-                const csvString = await response.text();
-                
-                // Parse CSV to JSON using PapaParse
-                Papa.parse(csvString, {
-                    header: true,
-                    skipEmptyLines: true,
-                    complete: function(results) {
-                        const jsonData = results.data;
-                        // Save JSON to browser storage
-                        localStorage.setItem(STORAGE_KEY, JSON.stringify(jsonData));
-                        localStorage.setItem(STORAGE_KEY + '_time', new Date().toLocaleString());
-                        
-                        renderDashboard(jsonData);
-                        updateStatus('Successfully refreshed and saved as JSON');
-                        
-                        if (showFeedback) {
-                            icon.classList.remove('animate-spin');
-                            btn.disabled = false;
+                        itsMap.set(its, (itsMap.get(its) || 0) + 1);
+                        mohallaCount[mohalla] = (mohallaCount[mohalla] || 0) + 1;
+
+                        let hasSat = false;
+                        let hasSun = false;
+                        if (satSlot && satSlot.trim()) { satSlots[satSlot] = (satSlots[satSlot] || 0) + 1; satTotal++; hasSat = true; }
+                        if (sunSlot && sunSlot.trim()) { sunSlots[sunSlot] = (sunSlots[sunSlot] || 0) + 1; sunTotal++; hasSun = true; }
+
+                        if (hasSat && hasSun) bothDaysCount++;
+                        else if (hasSat || hasSun) oneDayOnlyCount++;
+
+                        if (timestamp) {
+                            const datePart = timestamp.split(' ')[0];
+                            timelineData[datePart] = (timelineData[datePart] || 0) + 1;
                         }
-                    }
-                });
+                    });
 
-            } catch (error) {
-                console.error('Error fetching CSV:', error);
-                if (showFeedback) {
-                    alert('Could not find the CSV file to refresh. Please ensure the file is named correctly.');
-                    icon.classList.remove('animate-spin');
-                    btn.disabled = false;
+                    const uniqueCount = itsMap.size;
+                    const duplicateCount = total - uniqueCount;
+
+                    document.getElementById('totalRegs').innerText = total;
+                    document.getElementById('uniquePeople').innerText = uniqueCount;
+                    document.getElementById('duplicateCount').innerText = duplicateCount;
+                    document.getElementById('satRegs').innerText = satTotal;
+                    document.getElementById('sunRegs').innerText = sunTotal;
+                    document.getElementById('uniquePercent').innerText = `${((uniqueCount/total)*100).toFixed(1)}% of total`;
+                    document.getElementById('lastUpdated').innerText = `Updated: ${new Date().toLocaleTimeString()}`;
+
+                    updateCharts({
+                        mohalla: mohallaCount,
+                        satSlots: satSlots,
+                        sunSlots: sunSlots,
+                        timeline: timelineData,
+                        intent: { both: bothDaysCount, single: oneDayOnlyCount }
+                    });
                 }
-            }
-        }
-
-        function updateStatus(msg) {
-            const time = localStorage.getItem(STORAGE_KEY + '_time') || 'Never';
-            document.getElementById('dataStatus').innerHTML = `${msg}<br>Last Sync: ${time}`;
-        }
-
-        function renderDashboard(data) {
-            processData(data);
-        }
-
-        function processData(input) {
-            let data;
-            if (typeof input === 'string') {
-                const results = Papa.parse(input, {
-                    header: true,
-                    skipEmptyLines: true
-                });
-                data = results.data;
-                // Save this upload to cache too
-                localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
-                localStorage.setItem(STORAGE_KEY + '_time', new Date().toLocaleString());
-            } else {
-                data = input; 
-            }
-
-            const total = data.length;
-            
-            // Statistics logic
-            const itsMap = new Map();
-            const mohallaCount = {};
-            const satSlots = {};
-            const sunSlots = {};
-            const timelineData = {};
-            
-            let satTotal = 0;
-            let sunTotal = 0;
-            let bothDaysCount = 0;
-            let oneDayOnlyCount = 0;
-
-            data.forEach(row => {
-                const its = row['ITS'] ? row['ITS'].trim() : 'Unknown';
-                const mohalla = row['Mohalla'] ? row['Mohalla'].trim() : 'Unknown';
-                const satSlot = row['Time for Saturday - 2nd May / 16mi Zilqadatil Haram'];
-                const sunSlot = row['Time for Sunday - 3rd May / 17mi Zilqadatil Haram'];
-                const timestamp = row['Timestamp'];
-
-                if (!its || its === 'Unknown') return;
-
-                // Unique ITS count
-                itsMap.set(its, (itsMap.get(its) || 0) + 1);
-
-                // Mohalla count
-                mohallaCount[mohalla] = (mohallaCount[mohalla] || 0) + 1;
-
-                // Slot counts
-                let hasSat = false;
-                let hasSun = false;
-                
-                if (satSlot && satSlot.trim()) {
-                    satSlots[satSlot] = (satSlots[satSlot] || 0) + 1;
-                    satTotal++;
-                    hasSat = true;
-                }
-                if (sunSlot && sunSlot.trim()) {
-                    sunSlots[sunSlot] = (sunSlots[sunSlot] || 0) + 1;
-                    sunTotal++;
-                    hasSun = true;
-                }
-
-                if (hasSat && hasSun) bothDaysCount++;
-                else if (hasSat || hasSun) oneDayOnlyCount++;
-
-                // Timeline parsing (DD/MM/YYYY HH:MM:SS)
-                if (timestamp) {
-                    const datePart = timestamp.split(' ')[0];
-                    timelineData[datePart] = (timelineData[datePart] || 0) + 1;
-                }
-            });
-
-            const uniqueCount = itsMap.size;
-            const duplicateCount = total - uniqueCount;
-
-            // Update KPIs
-            document.getElementById('totalRegs').innerText = total;
-            document.getElementById('uniquePeople').innerText = uniqueCount;
-            document.getElementById('duplicateCount').innerText = duplicateCount;
-            document.getElementById('satRegs').innerText = satTotal;
-            document.getElementById('sunRegs').innerText = sunTotal;
-            document.getElementById('uniquePercent').innerText = `${((uniqueCount/total)*100).toFixed(1)}% of total`;
-            document.getElementById('satPercent').innerText = `${((satTotal/(satTotal+sunTotal))*100).toFixed(1)}% share`;
-            document.getElementById('sunPercent').innerText = `${((sunTotal/(satTotal+sunTotal))*100).toFixed(1)}% share`;
-            document.getElementById('lastUpdated').innerText = `Last updated: ${new Date().toLocaleTimeString()}`;
-
-            updateCharts({
-                mohalla: mohallaCount,
-                satSlots: satSlots,
-                sunSlots: sunSlots,
-                timeline: timelineData,
-                intent: { both: bothDaysCount, single: oneDayOnlyCount }
             });
         }
 
         function updateCharts(processed) {
-            // Destroy existing charts if they exist
-            Object.values(charts).forEach(chart => chart.destroy());
+            Object.values(charts).forEach(c => c.destroy());
 
-            // 1. Timeline Chart
-            const timelineLabels = Object.keys(processed.timeline).sort((a, b) => {
-                const partsA = a.split('/');
-                const partsB = b.split('/');
-                return new Date(partsA[2], partsA[1]-1, partsA[0]) - new Date(partsB[2], partsB[1]-1, partsB[0]);
+            // 1. Timeline
+            const tlLabels = Object.keys(processed.timeline).sort((a,b) => {
+                const pA = a.split('/'); const pB = b.split('/');
+                return new Date(pA[2], pA[1]-1, pA[0]) - new Date(pB[2], pB[1]-1, pB[0]);
             });
             charts.timeline = new Chart(document.getElementById('timelineChart'), {
                 type: 'line',
                 data: {
-                    labels: timelineLabels,
+                    labels: tlLabels,
                     datasets: [{
                         label: 'Registrations',
-                        data: timelineLabels.map(l => processed.timeline[l]),
+                        data: tlLabels.map(l => processed.timeline[l]),
                         borderColor: '#38bdf8',
                         backgroundColor: 'rgba(56, 189, 248, 0.1)',
                         fill: true,
-                        tension: 0.4,
-                        borderWidth: 3,
-                        pointBackgroundColor: '#38bdf8',
-                        pointRadius: 4
+                        tension: 0.4
                     }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        x: { grid: { display: false } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
-            // 2. Saturday Slots
-            const satLabels = Object.keys(processed.satSlots).sort();
+            // 2. Saturday
+            const satL = Object.keys(processed.satSlots).sort();
             charts.sat = new Chart(document.getElementById('satSlotChart'), {
                 type: 'bar',
                 data: {
-                    labels: satLabels,
-                    datasets: [{
-                        label: 'Attendees',
-                        data: satLabels.map(l => processed.satSlots[l]),
-                        backgroundColor: '#818cf8',
-                        borderRadius: 8
-                    }]
+                    labels: satL,
+                    datasets: [{ data: satL.map(l => processed.satSlots[l]), backgroundColor: '#818cf8', borderRadius: 8 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        x: { grid: { display: false } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
-            // 3. Sunday Slots
-            const sunLabels = Object.keys(processed.sunSlots).sort();
+            // 3. Sunday
+            const sunL = Object.keys(processed.sunSlots).sort();
             charts.sun = new Chart(document.getElementById('sunSlotChart'), {
                 type: 'bar',
                 data: {
-                    labels: sunLabels,
-                    datasets: [{
-                        label: 'Attendees',
-                        data: sunLabels.map(l => processed.sunSlots[l]),
-                        backgroundColor: '#f472b6',
-                        borderRadius: 8
-                    }]
+                    labels: sunL,
+                    datasets: [{ data: sunL.map(l => processed.sunSlots[l]), backgroundColor: '#f472b6', borderRadius: 8 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { legend: { display: false } },
-                    scales: {
-                        y: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } },
-                        x: { grid: { display: false } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
-            // 4. Mohalla Breakdown
-            const mohallaSorted = Object.entries(processed.mohalla)
-                .sort((a, b) => b[1] - a[1]);
-            
-            const mohallaCount = mohallaSorted.length;
-            const dynamicHeight = Math.max(320, mohallaCount * 30);
-            document.getElementById('mohallaChartContainer').style.height = `${dynamicHeight}px`;
-
+            // 4. Mohalla
+            const mohSorted = Object.entries(processed.mohalla).sort((a,b) => b[1]-a[1]);
+            document.getElementById('mohallaChartContainer').style.height = `${Math.max(320, mohSorted.length * 30)}px`;
             charts.mohalla = new Chart(document.getElementById('mohallaChart'), {
                 type: 'bar',
                 data: {
-                    labels: mohallaSorted.map(i => i[0]),
-                    datasets: [{
-                        label: 'Registrations',
-                        data: mohallaSorted.map(i => i[1]),
-                        backgroundColor: '#34d399',
-                        borderRadius: 8
-                    }]
+                    labels: mohSorted.map(i => i[0]),
+                    datasets: [{ data: mohSorted.map(i => i[1]), backgroundColor: '#34d399', borderRadius: 8 }]
                 },
-                options: {
-                    indexAxis: 'y',
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    plugins: { 
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: (context) => ` ${context.parsed.x} registrations`
-                            }
-                        }
-                    },
-                    scales: {
-                        y: { 
-                            grid: { display: false },
-                            ticks: { font: { size: 11 } }
-                        },
-                        x: { beginAtZero: true, grid: { color: 'rgba(255,255,255,0.05)' } }
-                    }
-                }
+                options: { indexAxis: 'y', responsive: true, maintainAspectRatio: false, plugins: { legend: { display: false } } }
             });
 
-            // 5. Intent Pie
+            // 5. Intent
             charts.intent = new Chart(document.getElementById('intentChart'), {
                 type: 'doughnut',
                 data: {
                     labels: ['Single Day', 'Both Days'],
-                    datasets: [{
-                        data: [processed.intent.single, processed.intent.both],
-                        backgroundColor: ['#fbbf24', '#f87171'],
-                        borderWidth: 0,
-                        hoverOffset: 10
-                    }]
+                    datasets: [{ data: [processed.intent.single, processed.intent.both], backgroundColor: ['#fbbf24', '#f87171'], borderWidth: 0 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: false,
-                    cutout: '70%',
-                    plugins: {
-                        legend: { position: 'bottom', labels: { padding: 20 } }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: false, cutout: '70%', plugins: { legend: { position: 'bottom' } } }
             });
+
+            // 6. Update Count Tables
+            updateSlotTable('satSlotTable', processed.satSlots, 'indigo');
+            updateSlotTable('sunSlotTable', processed.sunSlots, 'pink');
         }
 
-        // Event Listeners
-        document.getElementById('refreshBtn').addEventListener('click', () => fetchData(true));
+        function updateSlotTable(containerId, slots, color) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            
+            const sorted = Object.entries(slots).sort((a, b) => {
+                // Simple time-string sort (works for HH:MMam/pm)
+                return a[0].localeCompare(b[0], undefined, {numeric: true, sensitivity: 'base'});
+            });
+
+            sorted.forEach(([slot, count]) => {
+                const item = document.createElement('div');
+                item.className = `flex justify-between items-center p-2 rounded-lg bg-slate-900/40 border border-slate-700/30`;
+                item.innerHTML = `
+                    <span class="text-[10px] text-slate-400 font-medium truncate mr-2">${slot}</span>
+                    <span class="text-xs font-bold text-${color}-400 bg-${color}-400/10 px-2 py-0.5 rounded-md">${count}</span>
+                `;
+                container.appendChild(item);
+            });
+        }
 
         document.getElementById('csvFileInput').addEventListener('change', function(e) {
             const file = e.target.files[0];
             if (!file) return;
             const reader = new FileReader();
-            reader.onload = (event) => {
-                processData(event.target.result);
-                updateStatus('Manually updated from CSV and cached as JSON');
-            };
+            reader.onload = (ev) => processData(ev.target.result);
             reader.readAsText(file);
         });
     </script>
