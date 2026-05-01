@@ -73,18 +73,14 @@
             <div>
                 <div class="flex items-center gap-3 mb-1">
                     <h1 class="text-4xl font-bold gradient-text">Maaraz Dashboard</h1>
-                    <span id="syncStatus" class="flex items-center gap-1.5 px-3 py-1 bg-emerald-500/10 text-emerald-400 text-[10px] uppercase tracking-wider font-bold rounded-full border border-emerald-500/20">
-                        <span class="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></span>
-                        Auto-sync active
-                    </span>
                 </div>
-                <p class="text-slate-400">Real-time Registration Analytics & Statistics</p>
+                <p class="text-slate-400">Registration Analytics & Statistics</p>
             </div>
             <div class="flex items-center gap-4">
-                <div class="text-right">
-                    <p class="text-xs text-slate-500 uppercase tracking-widest font-bold">Last Sync</p>
-                    <p id="lastUpdated" class="text-sm text-slate-300 font-medium">--:--:--</p>
-                </div>
+                <button onclick="fetchData()" class="flex items-center gap-2 px-5 py-2.5 bg-blue-600 hover:bg-blue-500 rounded-xl font-medium transition-all active:scale-95 shadow-lg shadow-blue-500/20">
+                    <i data-lucide="refresh-cw" class="w-4 h-4"></i>
+                    Refresh Data
+                </button>
             </div>
         </header>
 
@@ -186,23 +182,35 @@
                 </div>
             </div>
         </div>
-
-
-    </div>
+        <!-- Manual CSV Upload -->
+        <div class="glass-card p-6 border-blue-500/50 bg-blue-500/5 mb-10">
+            <div class="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div class="flex items-start gap-4">
+                    <div class="p-3 bg-blue-600/20 rounded-xl">
+                        <i data-lucide="file-spreadsheet" class="w-6 h-6 text-blue-400"></i>
+                    </div>
+                    <div>
+                        <h4 class="text-blue-400 font-bold text-lg">Update Data Source</h4>
+                        <p class="text-slate-400 text-sm">Select a new CSV file to update the dashboard immediately.</p>
+                    </div>
+                </div>
+                <input type="file" id="csvFileInput" accept=".csv" class="block text-sm text-slate-400
+                    file:mr-4 file:py-2 file:px-4
+                    file:rounded-xl file:border-0
+                    file:text-sm file:font-semibold
+                    file:bg-blue-600 file:text-white
+                    hover:file:bg-blue-500 cursor-pointer transition-all
+                ">
+            </div>
+        </div>
 
     <script>
         // Global variables for charts
         let charts = {};
-        const DEFAULT_SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQLq6rH5BYR--OE-NGzyWEkSSmWlvqn3xHuiML_oXmqhvZhdkGWhGiV-nTVTnPHsEx4_fLbozgWJ1nm/pub?output=csv';
         const LOCAL_CSV = 'Ashara Ohbat PMO Special Access Guided Tour (Responses) - Form responses 1.csv';
 
         // Initialize Lucide icons
         lucide.createIcons();
-
-        // Load saved URL from localStorage or use the default one from the code
-        const savedUrl = localStorage.getItem('maarazSheetUrl');
-        document.getElementById('sheetUrlInput').value = savedUrl || DEFAULT_SHEET_URL;
-        if (!savedUrl) localStorage.setItem('maarazSheetUrl', DEFAULT_SHEET_URL);
 
         // Chart.js Default Config
         Chart.defaults.color = '#94a3b8';
@@ -212,55 +220,31 @@
         Chart.defaults.plugins.tooltip.cornerRadius = 8;
         Chart.defaults.plugins.tooltip.titleFont = { size: 14, weight: 'bold' };
 
-        function saveAndSync() {
-            const url = document.getElementById('sheetUrlInput').value.trim();
-            if (url) {
-                localStorage.setItem('maarazSheetUrl', url);
-                fetchData(url);
-            }
-        }
-
         async function fetchData() {
-            console.log('Syncing data...');
-            loadGoogleSheet(DEFAULT_SHEET_URL);
-        }
-
-        function loadGoogleSheet(url) {
-            let base = url.split('/pub')[0].split('/edit')[0].split('/export')[0];
-            
-            const scriptId = 'googleSheetScript';
-            const oldScript = document.getElementById(scriptId);
-            if (oldScript) oldScript.remove();
-
-            const script = document.createElement('script');
-            script.id = scriptId;
-            script.src = `${base}/gviz/tq?tqx=responseHandler:handleGoogleSheetResponse&t=${Date.now()}`;
-            
-            document.body.appendChild(script);
-        }
-
-        // Global callback for Google Sheets JSONP
-        window.handleGoogleSheetResponse = function(response) {
-            if (response.status === 'error') {
-                console.error('Error fetching Google Sheet:', response.errors[0].detailed_message);
-                return;
+            console.log('Loading local CSV...');
+            try {
+                const response = await fetch(LOCAL_CSV);
+                if (!response.ok) throw new Error('File Not Found');
+                const csvData = await response.text();
+                processData(csvData);
+                
+                // Update last sync status if needed
+                console.log('Local CSV loaded successfully');
+            } catch (error) {
+                console.error('Error loading CSV:', error);
+                // If the file isn't found, we don't alert because user can still upload manually
             }
+        }
 
-            const data = response.table;
-            const headers = data.cols.map(col => col.label);
-            const rows = data.rows.map(row => {
-                let obj = {};
-                row.c.forEach((cell, i) => {
-                    if (headers[i]) {
-                        obj[headers[i]] = cell ? (cell.v !== null ? cell.v : '') : '';
-                    }
-                });
-                return obj;
-            });
-
-            processData(rows);
-            console.log('Google Sheet sync complete.');
-        };
+        document.getElementById('csvFileInput').addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                processData(event.target.result);
+            };
+            reader.readAsText(file);
+        });
 
         function processData(input) {
             let data;
@@ -500,15 +484,7 @@
         }
 
         // Initial Load
-        window.onload = () => {
-            fetchData();
-            
-            // Set up background auto-sync every 60 seconds
-            setInterval(() => {
-                console.log('Background sync starting...');
-                fetchData();
-            }, 60000); 
-        };
+        window.onload = fetchData;
     </script>
 </body>
 </html>
